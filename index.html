@@ -1,0 +1,110 @@
+<!doctype html>
+<html lang="zh-CN">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover">
+<meta name="theme-color" content="#03070d">
+<meta name="description" content="菲律宾停车场地图：找附近或目的地附近的停车场，网页内导航，或一键交给 Google Maps / Waze。">
+<title>泊车雷达 ParkingPH · 菲律宾停车场导航</title>
+<link rel="icon" href="assets/icon.svg" type="image/svg+xml">
+<link rel="manifest" href="manifest.webmanifest">
+<link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/maplibre-gl@5.24.0/dist/maplibre-gl.css">
+<link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/@fontsource/rajdhani@5/500.css">
+<link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/@fontsource/rajdhani@5/700.css">
+<link rel="stylesheet" href="css/app.css">
+<script src="https://cdn.jsdelivr.net/npm/maplibre-gl@5.24.0/dist/maplibre-gl.js" defer></script>
+<script src="js/i18n.js" defer></script>
+<script src="js/routing.js" defer></script>
+<script src="js/app.js" defer></script>
+</head>
+<body>
+<div id="map" aria-label="地图"></div>
+<div class="map-vignette" aria-hidden="true"></div>
+
+<!-- 顶栏：品牌 + 搜索 + 语言 -->
+<header id="topbar" class="topbar">
+  <div class="brand">
+    <svg class="brand-mark" viewBox="0 0 32 32" aria-hidden="true"><path d="M16 2 29 9.5v13L16 30 3 22.5v-13Z" fill="none" stroke="currentColor" stroke-width="2"/><path d="M12 22V10h5.2a3.8 3.8 0 0 1 0 7.6H12" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round"/></svg>
+    <div class="brand-text">
+      <strong data-i18n="brand">泊车雷达</strong>
+      <span class="brand-sub">PARKING·PH</span>
+    </div>
+  </div>
+  <div class="search-row">
+    <div class="search">
+      <svg viewBox="0 0 24 24" aria-hidden="true"><circle cx="11" cy="11" r="6.5" fill="none" stroke="currentColor" stroke-width="2"/><path d="m16 16 4.5 4.5" stroke="currentColor" stroke-width="2" stroke-linecap="round"/></svg>
+      <input id="q" data-testid="search" type="search" autocomplete="off" enterkeyhint="search" data-i18n-placeholder="searchPh" placeholder="搜索目的地，找附近停车场">
+      <button id="q-clear" class="icon-btn q-clear" type="button" hidden data-i18n-aria="clear" aria-label="清除">×</button>
+    </div>
+    <button id="lang" data-testid="lang" class="chip-btn lang-btn" type="button">EN</button>
+  </div>
+  <ul id="suggest" class="suggest" role="listbox" hidden></ul>
+</header>
+
+<!-- 侧栏（电脑）/ 底部抽屉（手机） -->
+<aside id="panel" class="panel sheet-peek">
+  <button id="handle" class="sheet-handle" type="button" data-i18n-aria="toggleSheet" aria-label="展开或收起"><span></span></button>
+  <div class="panel-controls">
+    <div class="seg" role="group" data-i18n-aria="vehicle" aria-label="车型">
+      <button id="mode-car" data-testid="mode-car" type="button" aria-pressed="true">
+        <svg viewBox="0 0 24 24" aria-hidden="true"><path d="M5 16v2.5M19 16v2.5M4 16h16v-4.2l-1.8-5A1.5 1.5 0 0 0 16.8 5.8H7.2a1.5 1.5 0 0 0-1.4 1L4 11.8Z M4.5 11.5h15" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linejoin="round"/><circle cx="8" cy="13.8" r="1" fill="currentColor"/><circle cx="16" cy="13.8" r="1" fill="currentColor"/></svg>
+        <span data-i18n="car">汽车</span>
+      </button>
+      <button id="mode-moto" data-testid="mode-moto" type="button" aria-pressed="false">
+        <svg viewBox="0 0 24 24" aria-hidden="true"><circle cx="5.5" cy="16" r="3" fill="none" stroke="currentColor" stroke-width="1.8"/><circle cx="18.5" cy="16" r="3" fill="none" stroke="currentColor" stroke-width="1.8"/><path d="M5.5 16 9 10h6l3.5 6M9 10 7.5 7H5M15 10l-1.5-3H16" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"/></svg>
+        <span data-i18n="moto">摩托车</span>
+      </button>
+    </div>
+    <button id="locate" data-testid="locate" class="locate-btn" type="button">
+      <svg viewBox="0 0 24 24" aria-hidden="true"><circle cx="12" cy="12" r="4" fill="none" stroke="currentColor" stroke-width="2"/><path d="M12 2v3.5M12 18.5V22M2 12h3.5M18.5 12H22" stroke="currentColor" stroke-width="2" stroke-linecap="round"/></svg>
+      <span data-i18n="locate">定位附近</span>
+    </button>
+  </div>
+  <div id="panel-body" class="panel-body">
+    <section id="view-detail" class="view-detail" hidden></section>
+    <section id="view-list" class="view-list"></section>
+    <footer class="credits">
+      <span data-i18n="credits">地图数据 © OpenStreetMap 贡献者（ODbL）</span>
+      · <span data-i18n="dataDate">数据时间</span> <span id="data-date">—</span>
+      · <span data-i18n="creditsRoute">算路 FOSSGIS Valhalla / OSRM · 底图 OpenFreeMap</span>
+    </footer>
+  </div>
+</aside>
+
+<!-- 导航 HUD -->
+<div id="nav" data-testid="nav-panel" class="nav" hidden>
+  <div class="nav-card">
+    <div id="nav-arrow" class="nav-arrow" aria-hidden="true"></div>
+    <div class="nav-main">
+      <div id="nav-dist" class="nav-dist"></div>
+      <div id="nav-instruction" data-testid="nav-instruction" class="nav-instruction" aria-live="polite"></div>
+    </div>
+  </div>
+  <div class="nav-bar">
+    <div class="nav-stats">
+      <div><b id="nav-remaining">—</b><small data-i18n="remaining">剩余</small></div>
+      <div><b id="nav-eta">—</b><small data-i18n="eta">预计</small></div>
+      <div><b id="nav-arrive">—</b><small data-i18n="arriveAt">到达</small></div>
+    </div>
+    <div class="nav-actions">
+      <button id="nav-recenter" class="icon-btn" type="button" hidden data-i18n-aria="recenter" aria-label="回到我的位置">
+        <svg viewBox="0 0 24 24" aria-hidden="true"><path d="M12 3 19 20l-7-4-7 4Z" fill="currentColor"/></svg>
+      </button>
+      <button id="nav-mute" class="icon-btn" type="button" aria-pressed="false" data-i18n-aria="mute" aria-label="静音">
+        <svg viewBox="0 0 24 24" aria-hidden="true"><path d="M4 9.5h3.5L12 5.5v13l-4.5-4H4Z" fill="currentColor"/><path class="wave" d="M15.5 9a4 4 0 0 1 0 6M18 6.5a7.5 7.5 0 0 1 0 11" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round"/><path class="slash" d="m15 9 6 6m0-6-6 6" stroke="currentColor" stroke-width="1.8" stroke-linecap="round"/></svg>
+      </button>
+      <button id="nav-stop" data-testid="nav-stop" class="stop-btn" type="button" data-i18n="stop">结束</button>
+    </div>
+    <p class="nav-tip" data-i18n="lockTip">锁屏后网页定位会停，长途请用 Google Maps / Waze</p>
+  </div>
+</div>
+
+<div id="geo-error" data-testid="geo-error" class="toast toast-warn" role="alert" hidden></div>
+<div id="route-error" data-testid="route-error" class="toast toast-err" role="alert" hidden></div>
+<div id="hud" class="hud" aria-hidden="true">
+  <span id="hud-gps" class="hud-gps">GPS —</span>
+  <span id="hud-pos">—</span>
+  <span id="hud-count"></span>
+</div>
+</body>
+</html>
