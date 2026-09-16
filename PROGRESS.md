@@ -9,3 +9,7 @@
 ## 进度
 - 任务 1：tools/build_data.mjs 完成。--refresh 实测 kumi 返回 osm_base 2026-05-06（比缓存 06-01 旧）并覆盖了缓存 → 已回滚到 06-01 版本，脚本改为只接受更新的数据。现 data/parking.json 13730 条（汽车 13127／摩托 603），2.10 MB
 - 任务 2/3：index.html + css/app.css + js/{i18n,routing,app}.js 完成；本地判卷 44/44 PASS（shots/run-local.txt）；截图目检后改了详情页空字段、低缩放点位大小、导航时隐藏右上 HUD，复跑仍 44/44
+- 反向验证：`--prove` 退出码 1（W11、M7 FAIL），输出存 shots/run-prove.txt
+- 任务 4：公开仓库 jyb635050-ai/parking-ph，Pages 已 built；线上 data/parking.json 字节数与本地一致（2197511）；`--url` 线上判卷 43/43 PASS 退出码 0（shots/run-live.txt）；accept.mjs 本地与 git 中 SHA256 均为 7F7E13FB…AB5ED
+- 额外自查（线上）：Santo Tomas, Batangas 定位列出 30 个、无 null/undefined、无私人停车场；导航播报中文语音、申请了屏幕常亮；英文模式指令为英文；页面有 OSM 署名与数据日期 2026-06-01
+- 状态：全部完成
