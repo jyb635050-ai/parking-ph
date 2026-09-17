@@ -141,6 +141,7 @@
   }
   function lotTags(p) {
     const tags = [];
+    if (p.ver === 'sat') tags.push({ text: '✓ ' + t('verSat'), cls: 'ver' });
     if (p.name && p.t && I18N.has(`t_${p.t}`)) tags.push({ text: t(`t_${p.t}`) });
     if (p.fee === 'yes') tags.push({ text: t('fee_yes'), cls: 'fee-yes' });
     else if (p.fee === 'no') tags.push({ text: t('fee_no'), cls: 'fee-no' });
@@ -150,6 +151,17 @@
     if (p.cov === 'yes') tags.push({ text: t('covered') });
     if (p.sup === 'yes') tags.push({ text: t('supervised') });
     return tags;
+  }
+  function whyText(w) {
+    const [k, ...rest] = w.split(':');
+    if (k === 'op') return t('why_op', { v: rest.join(':') });
+    if (k === 'sat') return t(`why_sat_${rest[0]}`);
+    if (k === 'poi' || k === 'wd') {
+      const d = rest.pop(), kind = rest.shift();
+      const name = rest.join(':') || '—';
+      return t(`why_${k}`, { k: t(`k_${kind}`), n: name, d });
+    }
+    return t(`why_${k}`);
   }
   const tagHtml = tags => tags.map(x => `<span class="tag ${x.cls || ''}">${esc(x.text)}</span>`).join('');
   const refLabel = () => (S.ref?.kind === 'place' ? S.ref.label : t('nearMe'));
@@ -256,7 +268,7 @@
     const d = from ? hav(from.lat, from.lng, lat, lng) : NaN;
     const facts = [
       [t('f_type'), p.kind === 'moto' ? t('motoSpot') : (I18N.has(`t_${p.t}`) ? t(`t_${p.t}`) : '')],
-      [t('f_fee'), p.fee === 'yes' ? t('fee_yes') : p.fee === 'no' ? t('fee_no') : p.fee || ''],
+      [t('f_fee'), p.fee === 'yes' ? t('fee_yes') : p.fee === 'no' ? t('fee_no') : p.fee || (p.ncr && !p.chg ? t('feeLikely') : '')],
       [t('f_cap'), p.cap || ''],
       [t('f_hours'), p.oh || ''],
       [t('f_access'), p.acc ? (I18N.has(`acc_${p.acc}`) ? t(`acc_${p.acc}`) : p.acc) : ''],
@@ -282,6 +294,7 @@
           <a class="handoff" data-testid="handoff-waze" target="_blank" rel="noopener" href="https://waze.com/ul?ll=${lat},${lng}&navigate=yes"><i style="background:#33ccff"></i>${esc(t('waze'))}</a>
         </div>
         <p class="note">${esc(t('lockTip'))}</p>
+        ${p.why?.length ? `<div class="why"><b>${esc(t('verTitle'))} · ${esc(p.ver === 'sat' ? t('verSat') : t('verMulti'))}</b><ul>${p.why.map(w => `<li>${esc(whyText(w))}</li>`).join('')}</ul><small>${esc(t('verNote'))}</small></div>` : ''}
         <dl class="facts">${facts.map(([k, v]) => `<dt>${esc(k)}</dt><dd>${esc(v)}</dd>`).join('')}
           <dt>${esc(t('f_osm'))}</dt><dd><a href="https://www.openstreetmap.org/${osmType}/${p.id.slice(1)}" target="_blank" rel="noopener" style="color:var(--cyan)">${esc(p.id)}</a></dd></dl>
         <p class="note">${facts.length < 4 ? esc(t('moreUnknown')) + ' ' : ''}${esc(t('feeUnknownNote'))}</p>

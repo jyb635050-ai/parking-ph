@@ -164,6 +164,11 @@ svg { display: block; }
 .lot-tags { display: flex; flex-wrap: wrap; gap: 4px 6px; margin-top: 3px; }
 .tag { font-size: 11px; padding: 1px 6px; border-radius: 6px; border: 1px solid var(--line); color: var(--muted); white-space: nowrap; }
 .tag.fee-no { color: var(--green); border-color: rgba(61, 255, 176, .4); }
+.tag.ver { color: #00150d; background: var(--green); border-color: var(--green); font-weight: 700; }
+.why { margin-top: 12px; padding: 10px 12px; border-radius: 10px; border: 1px solid rgba(61, 255, 176, .35); background: rgba(61, 255, 176, .06); font-size: 13px; }
+.why b { color: var(--green); }
+.why ul { margin: 6px 0; padding-left: 18px; }
+.why small { color: var(--muted); }
 .tag.fee-yes { color: var(--amber); border-color: rgba(255, 181, 71, .4); }
 .lot-dist { flex: none; text-align: right; font-family: var(--num); font-weight: 700; font-size: 20px; line-height: 1; color: var(--text); }
 .lot-dist small { display: block; font-size: 11px; font-weight: 500; color: var(--muted); letter-spacing: .08em; }
