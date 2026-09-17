@@ -59,11 +59,17 @@ const src = JSON.parse(raw);
 const clean = v => (typeof v === 'string' && v.trim() ? v.trim() : undefined);
 const num = v => { const n = parseInt(v, 10); return Number.isFinite(n) && n > 0 ? n : undefined; };
 const EXCLUDED_ACCESS = new Set(['private', 'no']);
+// 只留「正规公共停车场」（领导 2026-09-17 裁决：收费＋正规管理）：
+// 不是明确免费，且至少满足一条：标了收费 / 收费细则(charge) / 立体·地下·楼顶停车楼 / 有运营方
+const STRUCTURED = new Set(['multi-storey', 'underground', 'rooftop']);
+const isFormal = t => t.fee !== 'no' && (
+  (clean(t.fee) && t.fee !== 'no') || clean(t.charge) || STRUCTURED.has(t.parking) || clean(t.operator));
 const features = [];
-let skippedAccess = 0, skippedGeom = 0;
+let skippedAccess = 0, skippedGeom = 0, skippedInformal = 0;
 for (const e of src.elements) {
   const t = e.tags || {};
   if (EXCLUDED_ACCESS.has(t.access)) { skippedAccess++; continue; }
+  if (!isFormal(t)) { skippedInformal++; continue; }
   const lat = e.lat ?? e.center?.lat, lon = e.lon ?? e.center?.lon;
   if (!Number.isFinite(lat) || !Number.isFinite(lon)) { skippedGeom++; continue; }
   const p = {
@@ -71,7 +77,8 @@ for (const e of src.elements) {
     kind: t.amenity === 'motorcycle_parking' ? 'moto' : 'car',
     name: clean(t.name) || clean(t['name:en']) || null,
     t: clean(t.parking),                       // surface / multi-storey / underground / street_side …
-    fee: clean(t.fee),                         // yes / no / 自由文本
+    fee: clean(t.fee),                         // yes / 自由文本
+    chg: clean(t.charge),                      // 收费细则，如 "PHP 50/hour"
     cap: num(t.capacity),
     acc: clean(t.access),                      // customers / yes / permissive …
     oh: clean(t.opening_hours),
@@ -90,10 +97,12 @@ const out = {
     osm_base: src.osm3s?.timestamp_osm_base || null,
     built_at: new Date().toISOString(),
     excluded_access_private_or_no: skippedAccess,
+    excluded_not_formal: skippedInformal,
+    filter: 'fee!=no AND (fee OR charge OR parking in multi-storey/underground/rooftop OR operator)',
   },
   features,
 };
 fs.mkdirSync(path.dirname(OUT), { recursive: true });
 fs.writeFileSync(OUT, JSON.stringify(out));
 const car = features.filter(f => f.properties.kind === 'car').length;
-console.log(`写出 ${features.length} 条（汽车 ${car}／摩托 ${features.length - car}），剔除 access=private/no ${skippedAccess}，无坐标 ${skippedGeom}；OSM 时间 ${out.meta.osm_base}；${(fs.statSync(OUT).size / 1048576).toFixed(2)} MB`);
+console.log(`写出 ${features.length} 条（汽车 ${car}／摩托 ${features.length - car}），剔除 access=private/no ${skippedAccess}、非正规 ${skippedInformal}，无坐标 ${skippedGeom}；OSM 时间 ${out.meta.osm_base}；${(fs.statSync(OUT).size / 1048576).toFixed(2)} MB`);

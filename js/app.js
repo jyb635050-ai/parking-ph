@@ -260,6 +260,7 @@
       [t('f_cap'), p.cap || ''],
       [t('f_hours'), p.oh || ''],
       [t('f_access'), p.acc ? (I18N.has(`acc_${p.acc}`) ? t(`acc_${p.acc}`) : p.acc) : ''],
+      [t('f_charge'), p.chg || ''],
       [t('f_operator'), p.op || ''],
     ].filter(([, v]) => v);
     facts.push([t('f_coords'), `${lat.toFixed(5)}, ${lng.toFixed(5)}`]);

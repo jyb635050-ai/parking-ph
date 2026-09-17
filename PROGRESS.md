@@ -13,3 +13,4 @@
 - 任务 4：公开仓库 jyb635050-ai/parking-ph，Pages 已 built；线上 data/parking.json 字节数与本地一致（2197511）；`--url` 线上判卷 43/43 PASS 退出码 0（shots/run-live.txt）；accept.mjs 本地与 git 中 SHA256 均为 7F7E13FB…AB5ED
 - 额外自查（线上）：Santo Tomas, Batangas 定位列出 30 个、无 null/undefined、无私人停车场；导航播报中文语音、申请了屏幕常亮；英文模式指令为英文；页面有 OSM 署名与数据日期 2026-06-01
 - 状态：全部完成
+- 2026-09-17 需求变更（领导）：只保留正规收费公共停车场 → 1390 条（汽车 1256／摩托 134）。判卷 D2/D3 门槛下调并新增 D7，新 SHA256 C6E8972597FD3DBB69B3140A26A3B1F82245D386CE6A408AC5B9992A750A691B；本地 45/45 PASS；D7 反向验证（塞一条 fee=no）退出码 1

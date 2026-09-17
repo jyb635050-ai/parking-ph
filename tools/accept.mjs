@@ -24,6 +24,8 @@
 //                           汽车模式列表里不许出现 data-kind=moto
 // [data-testid=lang]        中/英切换，首屏可见；<html lang> 在 zh-CN 与 en 之间切换
 // data/parking.json         GeoJSON FeatureCollection，Point；properties 至少 id(唯一) kind(car|moto) name(非空字符串或 null)
+//                           只收正规公共停车场（领导 2026-09-17 裁决）：fee 不是 no，且至少有 fee / chg(收费细则) /
+//                           t 为 multi-storey|underground|rooftop / op(运营方) 之一
 // 算路只许请求 valhalla1.openstreetmap.de / router.project-osrm.org / routing.openstreetmap.de，
 // 对同一台算路服务器，任意两次请求间隔 ≥ 900ms（服务条款：每秒不超过 1 次）
 import { createRequire } from 'node:module';
@@ -106,6 +108,8 @@ async function checkData(base) {
   } catch (e) { check('D1 data/parking.json 可读且是 JSON', false, e.message); return; }
   const feats = Array.isArray(fc?.features) ? fc.features : [];
   check('D1 data/parking.json 可读且是 FeatureCollection', fc?.type === 'FeatureCollection' && feats.length > 0, `features=${feats.length}`);
+  const STRUCT = ['multi-storey', 'underground', 'rooftop'];
+  let informal = 0;
   const ids = new Set(); let dup = 0, badGeom = 0, outPH = 0, badKind = 0, badName = 0, car = 0, moto = 0;
   for (const f of feats) {
     const p = f.properties || {};
@@ -115,11 +119,13 @@ async function checkData(base) {
     else if (c[1] < 4.2 || c[1] > 21.5 || c[0] < 116 || c[0] > 127.2) outPH++;
     if (p.kind === 'car') car++; else if (p.kind === 'moto') moto++; else badKind++;
     if (!(p.name === null || (typeof p.name === 'string' && p.name.trim().length > 0))) badName++;
+    if (p.fee === 'no' || !((p.fee && p.fee !== 'no') || p.chg || STRUCT.includes(p.t) || p.op)) informal++;
   }
-  check('D2 汽车停车场 ≥ 12500', car >= 12500, `car=${car}`);
-  check('D3 摩托车停车点 ≥ 500', moto >= 500, `moto=${moto}`);
+  check('D2 正规汽车停车场 ≥ 1200', car >= 1200, `car=${car}`);
+  check('D3 正规摩托车停车点 ≥ 100', moto >= 100, `moto=${moto}`);
   check('D4 id 唯一且非空、几何都是有效 Point、全部在菲律宾范围内', dup === 0 && badGeom === 0 && outPH === 0, `dup=${dup} badGeom=${badGeom} outsidePH=${outPH}`);
   check('D5 kind 只有 car/moto，name 是非空字符串或 null', badKind === 0 && badName === 0, `badKind=${badKind} badName=${badName}`);
+  check('D7 每一条都是正规公共停车场（非免费，且有收费/收费细则/停车楼/运营方之一）', informal === 0, `informal=${informal}`);
   if (!urlArg) {
     const mb = fs.statSync(path.join(ROOT, 'data/parking.json')).size / 1048576;
     check('D6 data/parking.json ≤ 3.5 MB（手机首屏流量）', mb <= 3.5, `${mb.toFixed(2)} MB`);
